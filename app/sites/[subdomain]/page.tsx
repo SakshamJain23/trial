@@ -29,47 +29,29 @@ export default async function SitePage(props: {
   const layout = Array.isArray(site.layout) ? site.layout : [];
 
   return (
-    <main style={{ padding: '40px', fontFamily: 'sans-serif' }}>
-      <h1>Storefront: {subdomain?.toUpperCase()}</h1>
-      <hr style={{ margin: '20px 0' }} />
+    <main style={{ padding: '40px', fontFamily: 'sans-serif', maxWidth: '1200px', margin: '0 auto' }}>
+      <h1 style={{ fontSize: '2rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+        Storefront: {subdomain?.toUpperCase()}
+      </h1>
+      <hr style={{ margin: '20px 0', border: 'none', borderTop: '1px solid #eee' }} />
 
       {layout.map((block: any, index: number) => {
         if (!block || typeof block !== 'object') return null;
 
         if (block.type === 'video') {
-          return (
-            <div key={index} style={{ background: '#eee', padding: '20px', margin: '10px 0' }}>
-              🎥 Video Player Block (URL: {block.url})
-            </div>
-          );
+          return <div key={index} style={{ background: '#eee', padding: '20px', margin: '10px 0' }}>🎥 Video Player Block</div>;
         }
         if (block.type === 'banners') {
-          return (
-            <div key={index} style={{ background: '#ddd', padding: '20px', margin: '10px 0' }}>
-              🖼️ Banner Grid ({block.count} banners)
-            </div>
-          );
+          return <div key={index} style={{ background: '#ddd', padding: '20px', margin: '10px 0' }}>🖼️ Banner Grid</div>;
         }
         if (block.type === 'slideshow') {
-          return (
-            <div key={index} style={{ background: '#cfe2ff', padding: '20px', margin: '10px 0' }}>
-              🔄 Slideshow Carousel ({block.count} slides)
-            </div>
-          );
+          return <div key={index} style={{ background: '#cfe2ff', padding: '20px', margin: '10px 0' }}>🔄 Slideshow Carousel</div>;
         }
         if (block.type === 'circle_stones') {
-          return (
-            <div key={index} style={{ background: '#d1e7dd', padding: '20px', margin: '10px 0' }}>
-              ⚪ Circle Stone Frames Section
-            </div>
-          );
+          return <div key={index} style={{ background: '#d1e7dd', padding: '20px', margin: '10px 0' }}>⚪ Circle Stone Frames</div>;
         }
         if (block.type === 'image') {
-          return (
-            <div key={index} style={{ margin: '20px 0' }}>
-              <img src={block.url} alt="Store Asset" style={{ maxWidth: '100%', borderRadius: '8px' }} />
-            </div>
-          );
+          return <div key={index} style={{ margin: '20px 0' }}><img src={block.url} alt="Asset" style={{ maxWidth: '100%', borderRadius: '8px' }} /></div>;
         }
         return null;
       })}

@@ -1,7 +1,10 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  transpilePackages: ['three'],
+  reactStrictMode: false, // Disables double-mounting bugs in dev mode
 };
 
-export default nextConfig;
+export default function(phase: string, { defaultConfig }: { defaultConfig: NextConfig }) {
+  return nextConfig;
+}

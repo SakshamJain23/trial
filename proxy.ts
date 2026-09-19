@@ -1,23 +1,27 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export function proxy(req: NextRequest) {
+export default function middleware(req: NextRequest) {
   const url = req.nextUrl.clone();
-  const hostname = req.headers.get('host') || '';
 
-  // Extract the subdomain (e.g., "ethnic" from "ethnic.localhost:3000")
-  const currentHost = hostname.split('.')[0];
-
-  // Skip rewrite for root domain or basic localhost
-  if (currentHost === 'localhost' || currentHost === 'www') {
+  // CATALOG ROUTE ESCAPE HATCH
+  if (url.pathname.startsWith('/catalog')) {
     return NextResponse.next();
   }
 
-  // Route request to the subdomain folder
+  const hostname = req.headers.get('host') || '';
+  const currentHost = hostname.split('.')[0];
+
+  if (currentHost === 'localhost:3000' || currentHost === 'localhost' || currentHost === 'www') {
+    return NextResponse.next();
+  }
+
   url.pathname = `/sites/${currentHost}${url.pathname}`;
   return NextResponse.rewrite(url);
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  matcher: [
+    '/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)',
+  ],
 };
