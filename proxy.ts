@@ -4,8 +4,8 @@ import type { NextRequest } from 'next/server';
 export default function middleware(req: NextRequest) {
   const url = req.nextUrl.clone();
 
-  // CATALOG ROUTE ESCAPE HATCH
-  if (url.pathname.startsWith('/catalog')) {
+  // CATALOG & GALLERY ROUTE ESCAPE HATCH
+  if (url.pathname.startsWith('/catalog') || url.pathname.startsWith('/gallery')) {
     return NextResponse.next();
   }
 
