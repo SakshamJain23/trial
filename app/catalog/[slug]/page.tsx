@@ -19,6 +19,7 @@ export default function CatalogPage({ params }: { params: Promise<{ slug: string
   // Cart & Checkout State
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [customerEmail, setCustomerEmail] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -252,19 +253,20 @@ export default function CatalogPage({ params }: { params: Promise<{ slug: string
       </Script>
       <Script src="https://cdn.gtranslate.net/widgets/latest/dropdown.js" strategy="afterInteractive" />
 
-      <header className="bg-white border-b border-neutral-200 py-5 px-8 flex justify-between items-center sticky top-0 z-30">
-        <div>
+      <header className="bg-white border-b border-neutral-200 py-3 sm:py-5 px-4 sm:px-8 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sticky top-0 z-30">
+        <div className="min-w-0">
+
           <h1 className="text-xl tracking-widest uppercase font-light">Art Palace</h1>
           <p className="text-[10px] text-neutral-500 tracking-wider mt-1 uppercase">Exclusive Selection for <span className="font-medium text-neutral-800">{catalog.client_name}</span></p>
         </div>
        
-        <div className="flex gap-4 items-center z-50">
-          <div className="gtranslate_wrapper min-w-[120px]"></div>
+        <div className="flex flex-wrap gap-3 sm:gap-4 items-center justify-between sm:justify-end z-50 w-full sm:w-auto">
+          <div className="gtranslate_wrapper min-w-[105px] max-w-full text-sm"></div>
          
           <select
             value={currency}
             onChange={(e) => setCurrency(e.target.value)}
-            className="border-b border-neutral-300 py-1 text-sm bg-transparent focus:outline-none uppercase tracking-widest"
+            className="border-b border-neutral-300 py-2 text-sm bg-white focus:outline-none uppercase tracking-widest min-w-[112px] max-w-full"
           >
             <option value="USD">USD ($)</option>
             <option value="EUR">EUR (€)</option>
@@ -275,7 +277,7 @@ export default function CatalogPage({ params }: { params: Promise<{ slug: string
         </div>
       </header>
 
-      <div className="w-full px-4 sm:px-8 py-8 flex gap-8 items-start">
+      <div className="w-full px-3 sm:px-8 py-5 sm:py-8 flex gap-8 items-start">
        
         <aside className="w-56 shrink-0 hidden md:block sticky top-28 max-h-[80vh] overflow-y-auto pr-2 pb-12 sidebar-scroll">
           <div className="pb-4 border-b border-neutral-200 mb-6 sticky top-0 bg-white z-10">
@@ -329,13 +331,30 @@ export default function CatalogPage({ params }: { params: Promise<{ slug: string
         </aside>
 
         <div className="flex-1">
-          <div className="mb-6">
+          <div className="mb-5 sm:mb-6 flex items-center justify-between gap-3">
             <span className="text-[10px] uppercase tracking-widest text-neutral-500">
               Showing <span className="font-bold text-neutral-900">{filteredProducts.length}</span> items
             </span>
+            <button
+              type="button"
+              onClick={() => setIsFiltersOpen(true)}
+              className="md:hidden shrink-0 inline-flex items-center gap-2 border border-neutral-300 px-3 py-2 text-[10px] uppercase tracking-widest font-semibold bg-white"
+              aria-label="Open filters"
+            >
+              <span aria-hidden="true">☷</span> Filters
+              {(filters.category.length + filters.style.length + filters.collection.length +
+                (filters.minPrice !== '' ? 1 : 0) + (filters.maxPrice !== '' ? 1 : 0) +
+                (filters.minWeight !== '' ? 1 : 0) + (filters.maxWeight !== '' ? 1 : 0)) > 0 && (
+                <span className="bg-neutral-900 text-white rounded-full min-w-5 h-5 px-1 flex items-center justify-center">
+                  {filters.category.length + filters.style.length + filters.collection.length +
+                    (filters.minPrice !== '' ? 1 : 0) + (filters.maxPrice !== '' ? 1 : 0) +
+                    (filters.minWeight !== '' ? 1 : 0) + (filters.maxWeight !== '' ? 1 : 0)}
+                </span>
+              )}
+            </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-12">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-3 sm:gap-x-6 gap-y-8 sm:gap-y-12">
             {filteredProducts.map((product: any) => {
               if (!product) return null;
               const isSelected = !!cart.find(item => item.sku === product.id);
@@ -355,10 +374,10 @@ export default function CatalogPage({ params }: { params: Promise<{ slug: string
                     />
                     <button
                       onClick={(e) => toggleCartItem(product, e)}
-                      className={`absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center text-sm transition-all z-10 ${
+                      className={`absolute top-2 right-2 sm:top-4 sm:right-4 w-8 h-8 rounded-full flex items-center justify-center text-sm transition-all z-10 ${
                         isSelected
                           ? 'bg-neutral-900 text-white'
-                          : 'bg-white/80 text-neutral-600 hover:bg-white opacity-0 group-hover:opacity-100 backdrop-blur-sm'
+                          : 'bg-white/90 text-neutral-600 hover:bg-white opacity-100 md:opacity-0 md:group-hover:opacity-100 backdrop-blur-sm'
                       }`}
                     >
                       {isSelected ? '✓' : '+'}
@@ -390,9 +409,64 @@ export default function CatalogPage({ params }: { params: Promise<{ slug: string
         </div>
       </div>
 
+      {/* Mobile filter drawer */}
+      {isFiltersOpen && (
+        <div className="fixed inset-0 z-[60] flex">
+          <button
+            type="button"
+            aria-label="Close filters"
+            onClick={() => setIsFiltersOpen(false)}
+            className="absolute inset-0 bg-neutral-900/40 backdrop-blur-sm"
+          />
+          <aside className="relative ml-auto w-[min(88vw,360px)] h-[100dvh] bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+            <div className="flex items-center justify-between p-5 border-b border-neutral-200">
+              <h3 className="text-xs uppercase tracking-widest font-semibold">Filters</h3>
+              <button type="button" onClick={() => setIsFiltersOpen(false)} className="w-9 h-9 flex items-center justify-center text-neutral-600" aria-label="Close filters">✕</button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5">
+              <div className="mb-6">
+                <h4 className="text-[10px] uppercase tracking-wider font-semibold text-neutral-500 mb-4">Price ({currency})</h4>
+                <div className="flex gap-3">
+                  <input type="number" inputMode="decimal" placeholder="Min" value={filters.minPrice}
+                    onChange={(e) => handleNumberFilterChange('minPrice', e.target.value)}
+                    className="w-full min-w-0 border-b border-neutral-300 py-2 text-sm bg-transparent focus:outline-none focus:border-neutral-900 placeholder:text-neutral-400" />
+                  <input type="number" inputMode="decimal" placeholder="Max" value={filters.maxPrice}
+                    onChange={(e) => handleNumberFilterChange('maxPrice', e.target.value)}
+                    className="w-full min-w-0 border-b border-neutral-300 py-2 text-sm bg-transparent focus:outline-none focus:border-neutral-900 placeholder:text-neutral-400" />
+                </div>
+              </div>
+              <div className="mb-6">
+                <h4 className="text-[10px] uppercase tracking-wider font-semibold text-neutral-500 mb-4">Weight (g)</h4>
+                <div className="flex gap-3">
+                  <input type="number" inputMode="decimal" placeholder="Min" value={filters.minWeight}
+                    onChange={(e) => handleNumberFilterChange('minWeight', e.target.value)}
+                    className="w-full min-w-0 border-b border-neutral-300 py-2 text-sm bg-transparent focus:outline-none focus:border-neutral-900 placeholder:text-neutral-400" />
+                  <input type="number" inputMode="decimal" placeholder="Max" value={filters.maxWeight}
+                    onChange={(e) => handleNumberFilterChange('maxWeight', e.target.value)}
+                    className="w-full min-w-0 border-b border-neutral-300 py-2 text-sm bg-transparent focus:outline-none focus:border-neutral-900 placeholder:text-neutral-400" />
+                </div>
+              </div>
+              {renderFilterSection('Category', 'category', filterOptions.category)}
+              {renderFilterSection('Style', 'style', filterOptions.style)}
+              {renderFilterSection('Collection', 'collection', filterOptions.collection)}
+            </div>
+            <div className="p-4 border-t border-neutral-200 flex gap-3 bg-white pb-[calc(env(safe-area-inset-bottom)+1rem)]">
+              <button type="button" onClick={() => setFilters({
+                category: [], style: [], collection: [], minPrice: '', maxPrice: '', minWeight: '', maxWeight: ''
+              })} className="flex-1 border border-neutral-300 py-3 text-[10px] uppercase tracking-widest font-semibold">
+                Clear all
+              </button>
+              <button type="button" onClick={() => setIsFiltersOpen(false)} className="flex-1 bg-neutral-900 text-white py-3 text-[10px] uppercase tracking-widest font-semibold">
+                Show {filteredProducts.length} items
+              </button>
+            </div>
+          </aside>
+        </div>
+      )}
+
       {activeProduct && (
-        <div className="fixed inset-0 bg-white/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 md:p-12 animate-in fade-in duration-200">
-          <div className="bg-white max-w-5xl w-full h-[80vh] border border-neutral-200 shadow-2xl relative overflow-hidden flex flex-col md:flex-row">
+        <div className="fixed inset-0 bg-white/95 sm:bg-white/90 backdrop-blur-sm z-50 flex items-center justify-center p-0 sm:p-4 md:p-12 animate-in fade-in duration-200">
+          <div className="bg-white max-w-5xl w-full h-[100dvh] sm:h-[85vh] md:h-[80vh] sm:border border-neutral-200 shadow-2xl relative overflow-y-auto sm:overflow-hidden flex flex-col md:flex-row">
             <button
               onClick={() => setActiveProduct(null)}
               className="absolute top-4 right-4 w-10 h-10 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 flex items-center justify-center z-10 transition-colors"
@@ -400,11 +474,11 @@ export default function CatalogPage({ params }: { params: Promise<{ slug: string
               ✕
             </button>
 
-            <div className="w-full md:w-3/5 bg-neutral-50 h-full">
-              <img src={activeProduct?.image_url} alt={activeProduct?.title} className="w-full h-full object-cover" />
+            <div className="w-full md:w-3/5 bg-neutral-50 h-[42vh] min-h-[260px] md:h-full shrink-0">
+              <img src={activeProduct?.image_url} alt={activeProduct?.title} className="w-full h-full object-contain md:object-cover" />
             </div>
 
-            <div className="w-full md:w-2/5 p-10 flex flex-col justify-between h-full overflow-y-auto">
+            <div className="w-full md:w-2/5 p-5 sm:p-8 md:p-10 flex flex-col justify-between md:h-full md:overflow-y-auto">
               <div>
                 <p className="text-[10px] text-neutral-400 uppercase tracking-widest mb-2">SKU: {activeProduct?.sku}</p>
                 <h2 className="text-2xl font-light text-neutral-900 mb-4">{activeProduct?.title}</h2>
@@ -482,7 +556,7 @@ export default function CatalogPage({ params }: { params: Promise<{ slug: string
                 </div>
               </div>
 
-              <div className="mt-12 space-y-3 shrink-0">
+              <div className="mt-8 md:mt-12 space-y-3 shrink-0 pb-4">
                 {(() => {
                   const currentCartItem = cart.find(item => item.sku === activeProduct?.sku);
                   if (currentCartItem) {
@@ -528,12 +602,12 @@ export default function CatalogPage({ params }: { params: Promise<{ slug: string
       )}
 
       {cart.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-neutral-900 text-white py-5 px-8 z-40 flex items-center justify-between animate-in slide-in-from-bottom-full duration-300 shadow-[0_-10px_40px_rgba(0,0,0,0.2)]">
+        <div className="fixed bottom-0 left-0 right-0 bg-neutral-900 text-white py-3 sm:py-5 px-4 sm:px-8 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] sm:pb-5 z-40 flex items-center justify-between gap-3 animate-in slide-in-from-bottom-full duration-300 shadow-[0_-10px_40px_rgba(0,0,0,0.2)]">
           <div>
             <p className="text-[10px] uppercase tracking-widest text-neutral-400 mb-1">Your Cart</p>
             <p className="text-sm font-medium">{totalItems} items <span className="mx-2 text-neutral-600">|</span> <span className="font-bold">{currency} {getPrice(totalUsdPrice)}</span></p>
           </div>
-          <button onClick={() => setIsCartOpen(true)} className="bg-white text-neutral-900 px-8 py-3 text-xs font-bold uppercase tracking-widest hover:bg-neutral-200 transition-colors">
+          <button onClick={() => setIsCartOpen(true)} className="bg-white text-neutral-900 px-4 sm:px-8 py-3 text-[10px] sm:text-xs font-bold uppercase tracking-widest whitespace-nowrap hover:bg-neutral-200 transition-colors">
             View Cart
           </button>
         </div>
@@ -542,13 +616,13 @@ export default function CatalogPage({ params }: { params: Promise<{ slug: string
       {/* Slide-over Cart Modal */}
       {isCartOpen && (
         <div className="fixed inset-0 bg-neutral-900/40 backdrop-blur-sm z-50 flex justify-end">
-          <div className="bg-white w-full max-w-md h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+          <div className="bg-white w-full max-w-md h-[100dvh] shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
             <div className="flex items-center justify-between p-6 border-b border-neutral-200">
               <h2 className="text-lg uppercase tracking-widest font-light">Your Cart</h2>
               <button onClick={() => setIsCartOpen(false)} className="text-neutral-500 hover:text-neutral-900 font-bold">✕</button>
             </div>
             
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
               {cart.map(item => (
                 <div key={item.sku} className="flex gap-4 items-center">
                   <div className="flex-1">
@@ -565,7 +639,7 @@ export default function CatalogPage({ params }: { params: Promise<{ slug: string
               ))}
             </div>
 
-            <div className="p-6 border-t border-neutral-200 bg-neutral-50">
+            <div className="p-4 sm:p-6 border-t border-neutral-200 bg-neutral-50 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
               <div className="flex justify-between mb-6 text-lg font-medium">
                 <span>Total</span>
                 <span>{currency} {getPrice(totalUsdPrice)}</span>
