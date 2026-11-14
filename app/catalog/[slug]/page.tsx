@@ -16,6 +16,9 @@ export default function CatalogPage({ params }: { params: Promise<{ slug: string
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeProduct, setActiveProduct] = useState<any>(null);
+  const [hoveredSku, setHoveredSku] = useState<string | null>(null);
+  const [hoverImageIndex, setHoverImageIndex] = useState(0);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
   
   // Cart & Checkout State
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -38,6 +41,19 @@ export default function CatalogPage({ params }: { params: Promise<{ slug: string
   const [currency, setCurrency] = useState('USD');
   const rates: Record<string, number> = { USD: 1, EUR: 0.92, GBP: 0.79, INR: 83.5, CNY: 7.24 };
   const getPrice = (usd: number) => (usd * rates[currency]).toFixed(2);
+
+  // Cycle through product photos while a desktop user hovers over a product card.
+  useEffect(() => {
+    if (!hoveredSku) return;
+    const hoveredProduct = products.find((product) => product.sku === hoveredSku);
+    if (!hoveredProduct || (hoveredProduct.image_urls?.length || 0) < 2) return;
+
+    const timer = window.setInterval(() => {
+      setHoverImageIndex((current) => (current + 1) % hoveredProduct.image_urls.length);
+    }, 1100);
+
+    return () => window.clearInterval(timer);
+  }, [hoveredSku, products]);
 
   useEffect(() => {
     async function loadData() {
@@ -73,19 +89,28 @@ export default function CatalogPage({ params }: { params: Promise<{ slug: string
         .select(`
           sku, price_usd, number_of_stones, grams, color_swatch, shape, stone_cut, plating,
           products (id, title, product_category, type, description, collection),
-          product_images (image_src)
+          product_images (image_src, display_order)
         `)
         .in('sku', skus);
 
       if (!variantsError && variantsData) {
-        const formattedProducts = variantsData.map((v: any) => ({
+        const formattedProducts = variantsData.map((v: any) => {
+          const image_urls = (v.product_images || [])
+            .filter((image: any) => image?.image_src)
+            .sort((a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0))
+            .map((image: any) => image.image_src);
+
+          return ({
           id: v.sku, sku: v.sku, design_id: String(v.products?.id || v.sku),
           price_usd: v.price_usd, stones: v.number_of_stones,
           weight: v.grams || '0', color: v.color_swatch, shape: v.shape, cut: v.stone_cut, plating: v.plating,
           title: v.products?.title || 'Unknown', description: v.products?.description || 'No description provided.',
           category: v.products?.product_category || 'Uncategorized', style: v.products?.type || '',
-          collection: v.products?.collection || '', image_url: v.product_images?.[0]?.image_src || ''
-        }));
+          collection: v.products?.collection || '',
+          image_urls,
+          image_url: image_urls[0] || ''
+          });
+        });
        
         setProducts(formattedProducts);
       } else if (variantsError) {
@@ -407,13 +432,21 @@ export default function CatalogPage({ params }: { params: Promise<{ slug: string
                 >
                   <div
                     className="relative w-full aspect-square bg-[#F1F5FB] overflow-hidden mb-4"
-                    onClick={() => setActiveProduct(product)}
+                    onClick={() => { setActiveProduct(product); setActiveImageIndex(0); }}
+                    onMouseEnter={() => { setHoveredSku(product.sku); setHoverImageIndex(0); }}
+                    onMouseLeave={() => setHoveredSku(null)}
                   >
                     <img
-                      src={product.image_url}
-                      alt={product.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                      key={`${product.sku}-${hoveredSku === product.sku ? hoverImageIndex : 0}`}
+                      src={hoveredSku === product.sku ? (product.image_urls?.[hoverImageIndex] || product.image_url) : product.image_url}
+                      alt={`${product.title} photo ${hoveredSku === product.sku ? hoverImageIndex + 1 : 1}`}
+                      className="w-full h-full object-cover transition-opacity duration-300"
                     />
+                    {(product.image_urls?.length || 0) > 1 && (
+                      <div className="absolute top-2 right-2 bg-white/90 text-[#173B78] text-[9px] px-2 py-1 tracking-wider">
+                        {hoveredSku === product.sku ? hoverImageIndex + 1 : 1}/{product.image_urls.length} PHOTOS
+                      </div>
+                    )}
                     {!isSelected && (
                       <button
                         onClick={(e) => addOneToCart(product, e)}
@@ -524,8 +557,29 @@ export default function CatalogPage({ params }: { params: Promise<{ slug: string
               ✕
             </button>
 
-            <div className="w-full md:w-3/5 bg-[#F7F9FC] h-[42vh] min-h-[260px] md:h-full shrink-0">
-              <img src={activeProduct?.image_url} alt={activeProduct?.title} className="w-full h-full object-contain md:object-cover" />
+            <div className="w-full md:w-3/5 bg-[#F7F9FC] min-h-[42vh] md:h-full shrink-0 flex flex-col">
+              <div className="relative flex-1 min-h-[260px] overflow-hidden">
+                <img
+                  src={activeProduct?.image_urls?.[activeImageIndex] || activeProduct?.image_url}
+                  alt={`${activeProduct?.title || 'Product'} photo ${activeImageIndex + 1}`}
+                  className="w-full h-full object-contain"
+                />
+                {(activeProduct?.image_urls?.length || 0) > 1 && (
+                  <>
+                    <button type="button" onClick={() => setActiveImageIndex((i: number) => (i - 1 + activeProduct.image_urls.length) % activeProduct.image_urls.length)} aria-label="Previous photo" className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 text-[#173B78] shadow">‹</button>
+                    <button type="button" onClick={() => setActiveImageIndex((i: number) => (i + 1) % activeProduct.image_urls.length)} aria-label="Next photo" className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 text-[#173B78] shadow">›</button>
+                  </>
+                )}
+              </div>
+              {(activeProduct?.image_urls?.length || 0) > 1 && (
+                <div className="flex gap-2 overflow-x-auto p-3 border-t border-[#DCE5F2]">
+                  {activeProduct.image_urls.map((image: string, index: number) => (
+                    <button key={`${image}-${index}`} type="button" onClick={() => setActiveImageIndex(index)} aria-label={`Show photo ${index + 1}`} className={`w-16 h-16 shrink-0 border-2 overflow-hidden ${activeImageIndex === index ? 'border-[#173B78]' : 'border-transparent'}`}>
+                      <img src={image} alt={`${activeProduct.title} thumbnail ${index + 1}`} className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="w-full md:w-2/5 p-5 sm:p-8 md:p-10 flex flex-col justify-between md:h-full md:overflow-y-auto">
