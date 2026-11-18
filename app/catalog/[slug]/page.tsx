@@ -74,8 +74,12 @@ export default function CatalogPage({ params }: { params: Promise<{ slug: string
 
       const { data: itemsData, error: itemsError } = await supabase
         .from('catalog_items')
-        .select('variant_sku')
-        .eq('catalog_id', catalogData.id);
+        .select('variant_sku, priority_order')
+        .eq('catalog_id', catalogData.id)
+        .order('priority_order', {
+          ascending: true,
+          nullsFirst: false
+        });
 
       if (itemsError || !itemsData || itemsData.length === 0) {
         setLoading(false);
@@ -94,7 +98,26 @@ export default function CatalogPage({ params }: { params: Promise<{ slug: string
         .in('sku', skus);
 
       if (!variantsError && variantsData) {
-        const formattedProducts = variantsData.map((v: any) => {
+        // Put manually prioritized catalogue items first.
+        // Products with no priority_order stay after the prioritized products.
+        const priorityMap = new Map(
+          itemsData.map((item: any) => [
+            item.variant_sku,
+            item.priority_order
+          ])
+        );
+
+        const sortedVariants = [...variantsData].sort((a: any, b: any) => {
+          const priorityA = priorityMap.get(a.sku);
+          const priorityB = priorityMap.get(b.sku);
+
+          const valueA = priorityA == null ? Number.MAX_SAFE_INTEGER : priorityA;
+          const valueB = priorityB == null ? Number.MAX_SAFE_INTEGER : priorityB;
+
+          return valueA - valueB;
+        });
+
+        const formattedProducts = sortedVariants.map((v: any) => {
           const image_urls = (v.product_images || [])
             .filter((image: any) => image?.image_src)
             .sort((a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0))
